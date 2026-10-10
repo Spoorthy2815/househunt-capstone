@@ -1,0 +1,11 @@
+.git
+**/node_modules
+**/target
+**/dist
+**/data
+.env
+**/.env
+**/.env.*
+!**/.env.example
+**/*.log
+docs/*preview.png

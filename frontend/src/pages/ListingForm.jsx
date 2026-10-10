@@ -1,0 +1,17 @@
+import React,{createContext,useContext,useState,useEffect,Component} from 'react';
+import {Link,NavLink,Navigate,useNavigate,useParams} from 'react-router-dom';
+import {Home,ArrowUpRight,ArrowRight,Search,MapPin,BedDouble,Bath,Maximize,SlidersHorizontal,Plus,MessageCircle,X,Send,ShieldCheck,Leaf,Menu,Heart} from 'lucide-react';
+import ReactMarkdown from 'react-markdown';
+import {api,setToken,errorText,money} from '../api';
+import {Auth,Loading,Alert,Field,PropertyCard} from '../ui';
+const emptyProperty={title:'',description:'',city:'',address:'',type:'Apartment',price:'',bedrooms:2,bathrooms:1,area:'',amenities:'',imageUrl:'',tourUrl:''};
+function ListingForm(){
+ const {id}=useParams(),navigate=useNavigate();const [form,setForm]=useState(emptyProperty),[error,setError]=useState(''),[busy,setBusy]=useState(false),[loading,setLoading]=useState(!!id);
+ useEffect(()=>{if(id)api.get('/properties/'+id).then(r=>setForm(Object.fromEntries(Object.keys(emptyProperty).map(k=>[k,r.data[k]??''])))).catch(e=>setError(errorText(e))).finally(()=>setLoading(false));},[id]);
+ const set=(key,value)=>setForm({...form,[key]:value});
+ async function submit(e){e.preventDefault();setBusy(true);setError('');try{const body={...form,price:Number(form.price),bedrooms:Number(form.bedrooms),bathrooms:Number(form.bathrooms),area:Number(form.area)};if(id)await api.put('/properties/'+id,body);else await api.post('/properties',body);navigate('/dashboard');}catch(e){setError(errorText(e));}finally{setBusy(false);}}
+ if(loading)return <Loading/>;
+ return <main className="page narrow"><span className="eyebrow">MAKE ROOM FOR SOMETHING GOOD</span><h1>{id?'Edit your listing':'List your property'}</h1><p>Every new or edited listing is reviewed before it goes live.</p><form className="form-panel wide" onSubmit={submit}><Alert message={error}/><Field label="Property title" maxLength={150} value={form.title} onChange={v=>set('title',v)}/><label className="field">Description<textarea className="form-control" required maxLength={4000} rows={4} value={form.description} onChange={e=>set('description',e.target.value)}/></label><div className="form-grid"><Field label="City" value={form.city} onChange={v=>set('city',v)}/><Field label="Address" value={form.address} onChange={v=>set('address',v)}/><label className="field">Property type<select className="form-select" value={form.type} onChange={e=>set('type',e.target.value)}>{['Apartment','House','Studio','Villa'].map(t=><option key={t}>{t}</option>)}</select></label><Field label="Monthly rent (INR)" type="number" min="1" max="100000000" value={form.price} onChange={v=>set('price',v)}/><Field label="Bedrooms" type="number" min="0" max="20" value={form.bedrooms} onChange={v=>set('bedrooms',v)}/><Field label="Bathrooms" type="number" min="1" max="20" value={form.bathrooms} onChange={v=>set('bathrooms',v)}/><Field label="Area (sq ft)" type="number" min="1" max="100000" value={form.area} onChange={v=>set('area',v)}/><Field label="Amenities (comma separated)" required={false} value={form.amenities} onChange={v=>set('amenities',v)}/></div><Field label="Photo URL (HTTPS)" type="url" required={false} value={form.imageUrl} onChange={v=>set('imageUrl',v)}/><Field label="Virtual tour URL (HTTPS)" type="url" required={false} value={form.tourUrl} onChange={v=>set('tourUrl',v)}/><button className="button" disabled={busy}>{busy?'Saving…':'Submit for review'}<ArrowRight size={17}/></button></form></main>;
+}
+
+export default ListingForm;

@@ -1,0 +1,47 @@
+server:
+  port: ${PORT:8080}
+spring:
+  profiles:
+    default: local
+  jpa:
+    open-in-view: false
+    hibernate:
+      ddl-auto: update
+  datasource:
+    url: ${DB_URL:jdbc:h2:file:./data/househunt;MODE=MySQL}
+    username: ${DB_USER:sa}
+    password: ${DB_PASSWORD:}
+  jackson:
+    deserialization:
+      fail-on-unknown-properties: true
+app:
+  bootstrap-admin-email: ${BOOTSTRAP_ADMIN_EMAIL:}
+  bootstrap-admin-password: ${BOOTSTRAP_ADMIN_PASSWORD:}
+  jwt-secret: ${JWT_SECRET:local-development-secret-change-before-deployment-1234567890}
+  cors-origin: ${CORS_ORIGIN:http://localhost:5173}
+  seed: ${SEED_DEMO:true}
+  llm-key: ${LLM_API_KEY:}
+  llm-url: ${LLM_API_URL:https://api.openai.com/v1/chat/completions}
+  llm-model: ${LLM_MODEL:gpt-4.1-mini}
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
+logging:
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss} level=%level logger=%logger{36} message=%msg%n"
+---
+spring:
+  config:
+    activate:
+      on-profile: mysql
+  datasource:
+    url: ${DB_URL:jdbc:mysql://localhost:3306/househunt}
+    username: ${DB_USER:househunt}
+    password: ${DB_PASSWORD}
+app:
+  bootstrap-admin-email: ${BOOTSTRAP_ADMIN_EMAIL:}
+  bootstrap-admin-password: ${BOOTSTRAP_ADMIN_PASSWORD:}
+  jwt-secret: ${JWT_SECRET}
+  seed: ${SEED_DEMO:false}

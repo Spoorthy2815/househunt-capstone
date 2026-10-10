@@ -1,0 +1,38 @@
+const {chromium}=require(process.env.PLAYWRIGHT_MODULE || 'playwright');
+const assert=require('node:assert/strict');
+(async()=>{
+ const browser=await chromium.launch({channel:'msedge',headless:true});
+ const page=await browser.newPage({viewport:{width:1440,height:1000}});
+ const errors=[];page.on('pageerror',e=>errors.push(e.message));
+ await page.goto('http://localhost:5173');
+ await page.getByText('The Palm Residence',{exact:true}).waitFor({timeout:60000});
+ assert.equal(await page.locator('.property-card').count(),5);
+ await page.screenshot({path:'docs/desktop-preview.png',fullPage:true});
+ await page.getByRole('link',{name:'Log in',exact:true}).click();
+ await page.getByLabel('Email address').fill('renter@househunt.local');
+ await page.getByLabel('Password',{exact:true}).fill('RenterDemo123!');
+ await page.getByRole('button',{name:'Log in',exact:true}).click();
+ await page.getByRole('heading',{name:'Welcome home, Alex.'}).waitFor();
+ await page.getByRole('link',{name:'Find a home',exact:true}).click();
+ const savedTitle=await page.locator('.property-card .property-title').first().textContent();
+ const heart=page.locator('.property-card').first().locator('.favorite');
+ if(await heart.getAttribute('aria-label')==='Save home')await heart.click();
+ await page.getByRole('button',{name:'Remove from saved homes'}).first().waitFor();
+ await page.getByRole('link',{name:'Saved homes',exact:true}).click();
+ await page.getByText(savedTitle,{exact:true}).waitFor();
+ await page.getByLabel('Preferred city').fill('Bengaluru');
+ await page.getByRole('button',{name:'Save preferences'}).click();
+ await page.getByText('Preferences saved.',{exact:true}).waitFor();
+ await page.locator('.property-card').filter({hasText:savedTitle}).getByRole('button',{name:'Remove from saved homes'}).click();
+ await page.getByRole('button',{name:'Log out',exact:true}).click();
+ await page.setViewportSize({width:390,height:844});
+ await page.goto('http://localhost:5173');
+ await page.getByText(savedTitle,{exact:true}).waitFor();
+ assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth),'Mobile page must not overflow');
+ for(const image of await page.locator('.property-card img').all()){await image.scrollIntoViewIfNeeded();await image.evaluate(img=>img.decode().catch(()=>{}));}
+ await page.evaluate(()=>window.scrollTo(0,0));
+ await page.screenshot({path:'docs/mobile-preview.png',fullPage:true});
+ assert.deepEqual(errors,[]);
+ console.log('Browser smoke passed: desktop listings, login, saved home, profile, logout, mobile overflow, no runtime errors');
+ await browser.close();
+})().catch(e=>{console.error(e);process.exit(1);});
